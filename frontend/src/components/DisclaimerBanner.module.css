@@ -1,0 +1,42 @@
+.banner {
+  background-color: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  color: #78350f;
+}
+
+.title {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.5rem;
+  list-style-type: disc;
+}
+
+.list li {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.list li strong {
+  color: #92400e;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .banner {
+    padding: 1rem;
+    margin: 1rem 0;
+  }
+
+  .title {
+    font-size: 1.125rem;
+  }
+}

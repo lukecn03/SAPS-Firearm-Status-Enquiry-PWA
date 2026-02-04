@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+
+# Sitemaps
+Sitemap: https://saps-firearm-status.app/sitemap.xml
+
+# Search engine directives
+Crawl-delay: 0

@@ -1,0 +1,23 @@
+name = "saps-firearm-proxy"
+main = "dist/index.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[env.production]
+route = "https://saps-firearm-api.your-worker.workers.dev/*"
+zone_id = ""
+
+[env.staging]
+route = "https://saps-firearm-api-staging.your-worker.workers.dev/*"
+zone_id = ""
+
+[env.production.build]
+command = "npx tsc"
+cwd = "./proxy"
+
+# Use an explicit empty array for cron triggers
+[triggers]
+crons = []
+# Observability
+[observability]
+enabled = false

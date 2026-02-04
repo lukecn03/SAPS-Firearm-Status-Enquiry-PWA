@@ -1,0 +1,203 @@
+.container {
+  margin: 2rem 0;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.thead {
+  background-color: #f3f4f6;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.thead th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.1s;
+}
+
+.tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.tbody td {
+  padding: 1rem;
+  font-size: 0.9rem;
+  color: #374151;
+  word-break: break-word;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background-color: #dbeafe;
+  color: #0c4a6e;
+  border-radius: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.empty {
+  background-color: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  color: #78350f;
+  margin: 0;
+}
+
+.error {
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  color: #7f1d1d;
+}
+
+.errorText {
+  margin: 0 0 0.5rem 0;
+  font-weight: 500;
+}
+
+.errorHint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #991b1b;
+}
+
+.errorLink {
+  color: #991b1b;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.errorLink:hover {
+  color: #7f1d1d;
+}
+
+@media (max-width: 1024px) {
+  .thead th {
+    padding: 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .tbody td {
+    padding: 0.75rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    margin: 1rem 0;
+  }
+
+  .title {
+    font-size: 1.1rem;
+  }
+
+  .tableWrapper {
+    margin: 0 -1rem;
+    border-radius: 0;
+  }
+
+  .thead th {
+    padding: 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .tbody td {
+    padding: 0.65rem;
+    font-size: 0.8rem;
+  }
+
+  .statusBadge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+  }
+}
+
+/* Vertical card layout for mobile/stacked display */
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.cardTitle {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.definitionList {
+  margin: 0;
+}
+
+.rowItem {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.5rem;
+}
+
+.term {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0 0 0.25rem 0;
+  font-weight: 600;
+}
+
+.desc {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+@media (min-width: 900px) {
+  .cards {
+    gap: 1.25rem;
+  }
+  .card {
+    padding: 1.25rem;
+  }
+}

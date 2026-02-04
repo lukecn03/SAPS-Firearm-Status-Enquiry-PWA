@@ -1,0 +1,44 @@
+.banner {
+  background-color: #dbeafe;
+  border: 1px solid #0284c7;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  color: #075985;
+}
+
+.section {
+  margin-bottom: 1rem;
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0c4a6e;
+}
+
+.instruction {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.instruction strong {
+  color: #0c4a6e;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .banner {
+    padding: 1rem;
+    margin: 0.75rem 0;
+  }
+
+  .sectionTitle {
+    font-size: 0.95rem;
+  }
+}
