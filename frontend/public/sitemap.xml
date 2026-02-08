@@ -2,20 +2,20 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0">
   <url>
-    <loc>https://saps-firearm-status.app/</loc>
+    <loc>https://lukecn03.github.io/SAPS-Firearm-Status-Enquiry-PWA/</loc>
     <lastmod>2026-02-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://saps-firearm-status.app/privacy.html</loc>
+    <loc>https://lukecn03.github.io/SAPS-Firearm-Status-Enquiry-PWA/privacy.html</loc>
     <lastmod>2026-02-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://saps-firearm-status.app/a2hs.html</loc>
+    <loc>https://lukecn03.github.io/SAPS-Firearm-Status-Enquiry-PWA/a2hs.html</loc>
     <lastmod>2026-02-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>

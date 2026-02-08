@@ -7,8 +7,8 @@ compatibility_flags = ["nodejs_compat"]
 [build]
 command = "npm run build"
 
-[[triggers.crons]]
-cron = "0 */6 * * *"
+[triggers]
+crons = ["0 */6 * * *"]
 
 # KV namespace binding for caching (optional).
 # If you don't use KV, leave this section out entirely. If you do need KV,
@@ -22,9 +22,9 @@ cron = "0 */6 * * *"
 [env.production]
 vars = { ENVIRONMENT = "production" }
 
-[env.production.secrets]
-# Set CSRF_TOKEN and SAPS_URL via GitHub secrets or Cloudflare dashboard during deploy
-# These are secrets and should NOT be committed to the repo
+# Secrets must be set via `wrangler secret put` or the Cloudflare dashboard.
+# Do NOT add secrets to this file. Set `CSRF_TOKEN` and `SAPS_URL` in GitHub
+# Actions secrets or in the Cloudflare dashboard before deploying.
 
 [observability]
 [observability.logs]
