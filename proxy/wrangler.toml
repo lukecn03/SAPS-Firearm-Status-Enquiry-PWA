@@ -1,0 +1,32 @@
+name = "saps-firearm-proxy"
+main = "src/index.ts"
+
+compatibility_date = "2024-12-02"
+compatibility_flags = ["nodejs_compat"]
+
+[build]
+command = "npm run build"
+
+[[triggers.crons]]
+cron = "0 */6 * * *"
+
+# KV namespace binding for caching (optional).
+# If you don't use KV, leave this section out entirely. If you do need KV,
+# create a namespace and add a properly shaped entry like the example below.
+#
+# Example (uncomment and replace `id` with the namespace id returned by Wrangler):
+# [[kv_namespaces]]
+# binding = "SAPS_KV"
+# id = "abc123def456..."
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[env.production.secrets]
+# Set CSRF_TOKEN and SAPS_URL via GitHub secrets or Cloudflare dashboard during deploy
+# These are secrets and should NOT be committed to the repo
+
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true

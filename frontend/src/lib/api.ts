@@ -15,7 +15,7 @@ interface ApiError {
   code?: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
 
 export async function queryFirearmStatus(
   fsref: string,
@@ -60,9 +60,9 @@ export async function queryFirearmStatus(
       };
     }
 
-    logger.debug('Fetching from API endpoint', { url: `${API_BASE_URL}/api/proxy/firearm-status` });
+    logger.debug('Fetching from API endpoint', { url: `${API_BASE_URL}/api/firearm-status` });
     
-    const response = await fetch(`${API_BASE_URL}/api/proxy/firearm-status`, {
+    const response = await fetch(`${API_BASE_URL}/api/firearm-status`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

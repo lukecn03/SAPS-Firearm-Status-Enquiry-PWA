@@ -31,11 +31,12 @@
 
 This is a **production-ready React PWA** for checking South African firearm application status with SAPS. It includes:
 
-- **Frontend**: Mobile-first React SPA with service worker caching
-- **Proxy Backend**: Node.js/Express server with rate limiting & validation
+- **Frontend**: Mobile-first React SPA with service worker caching (deployed to GitHub Pages)
+- **Backend**: Cloudflare Workers proxy with rate limiting & validation
 - **PWA Features**: Installable, works offline, 5-minute client-side cache
 - **SEO**: Structured data, Open Graph, sitemap, robots.txt
 - **Privacy**: POPIA-compliant, zero server-side data storage
+- **CI/CD**: GitHub Actions for automated deployment
 
 ---
 
@@ -51,14 +52,15 @@ This is a **production-ready React PWA** for checking South African firearm appl
 - ✅ Accessible (WCAG)
 - ✅ SEO-optimized (structured data, meta tags, sitemap)
 
-### Backend (Express.js)
+### Backend (Cloudflare Workers)
 - ✅ Input validation (fsref, fserial)
-- ✅ Rate limiting (30 req/min per IP)
-- ✅ 15-second upstream timeout
+- ✅ Rate limiting (10 req/min per IP)
+- ✅ 30-second upstream timeout
 - ✅ CORS support
 - ✅ Health check endpoint
 - ✅ Error handling (no raw status codes to client)
 - ✅ Environment-based configuration
+- ✅ Serverless deployment on Cloudflare
 
 ---
 
@@ -78,19 +80,19 @@ cd SAPS-Firearm-Status-Enquiry-PWA
 # Install dependencies
 npm install
 
-# Terminal 1: Start proxy (port 3000)
-cd proxy
+# Terminal 1: Start frontend (port 5173)
+cd frontend
 npm install
 npm run dev
 
-# Terminal 2: Start frontend (port 5173)
-cd frontend
+# Terminal 2: Start Cloudflare Workers proxy (port 8787)
+cd proxy
 npm install
 npm run dev
 ```
 
 Frontend: `http://localhost:5173`  
-Backend: `http://localhost:3000`
+Backend: `http://localhost:8787`
 
 ### PWA Installation (After Deployment)
 
@@ -123,52 +125,61 @@ SAPS-Firearm-Status-Enquiry-PWA/
 │   ├── .env.production          # Prod env vars
 │   ├── vite.config.ts
 │   └── package.json
-├── proxy/                       # Express.js backend
+├── proxy/                       # Cloudflare Workers backend
 │   ├── src/
-│   │   ├── index.ts             # Main server
+│   │   ├── index.ts             # Main worker handler
 │   │   └── logger.ts            # Server-side logging
-│   ├── .env.development         # Dev env vars
-│   ├── .env.production          # Prod env vars
+│   ├── wrangler.toml            # Cloudflare Workers config
 │   ├── package.json
 │   └── tsconfig.json
-├── DEPLOYMENT.md                # Extended deployment guide
-├── SEO.md                       # SEO optimization checklist
-├── ProjectOutlinePrompt.md      # Project context
+├── .github/workflows/           # GitHub Actions CI/CD
+│   ├── deploy-frontend-gh-pages.yml
+│   └── deploy-worker-cloudflare.yml
+├── LICENSE                      # MIT License
 └── README.md                    # This file
 ```
 
-**Tech Stack**: React 18 • TypeScript • Vite • CSS Modules • Express.js • Workbox • Cloudflare Pages/GitHub Pages
+**Tech Stack**: React 18 • TypeScript • Vite • CSS Modules • Cloudflare Workers • Workbox • GitHub Pages
 
 ---
 
 ## Deployment
 
-### Option 1: Cloudflare Pages (Frontend) + Render (Proxy)
+This project uses **GitHub Actions** for automated CI/CD:
 
-**Frontend on Cloudflare Pages** (Free tier available):
-1. Push repo to GitHub
-2. Go to [dash.cloudflare.com](https://dash.cloudflare.com) → Pages → Create project
-3. Select repository, build command: `cd frontend && npm install && npm run build`, output: `frontend/dist`
-4. Set environment variable: `VITE_API_BASE_URL=https://your-proxy-url.com`
-5. Deploy
+### Frontend → GitHub Pages
+- Automatically deployed on every push to main branch
+- Builds with Vite, publishes to `gh-pages` branch
+- Accessible at: `https://yourusername.github.io/SAPS-Firearm-Status-Enquiry-PWA/`
 
-**Backend on Render.com** (Free tier available):
-1. Go to [render.com](https://render.com) → New Web Service
-2. Select repo, build command: `cd proxy && npm install && npm run build`, start command: `npm start`
-3. Set environment variables:
-   ```
-   NODE_ENV=production
-   PORT=3000
-   ALLOWED_ORIGIN=https://your-frontend.pages.dev
-   ```
-4. Deploy and get URL (e.g., `https://your-proxy.onrender.com`)
-5. Update frontend `VITE_API_BASE_URL` to proxy URL
+### Backend → Cloudflare Workers
+- Automatically deployed on every push to main branch
+- Deploys to Cloudflare Workers with Wrangler
+- Requires: Cloudflare account + `CLOUDFLARE_API_TOKEN` in GitHub Secrets
 
-### Option 2: GitHub Pages (Frontend) + Heroku/Railway (Proxy)
+#### Setup Steps:
 
-Similar setup, but use GitHub Pages for frontend (Settings → Pages → GitHub Actions).
+**1. Configure Frontend (GitHub Pages)**
+- Repo Settings → Pages → Source: Deploy from a branch → `gh-pages`
+- The GitHub Actions workflow handles the build and deployment
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed steps.
+**2. Configure Backend (Cloudflare Workers)**
+- Create a Cloudflare account and Workers application
+- Get your Cloudflare API Token: [Cloudflare Dashboard](https://dash.cloudflare.com) → API Tokens
+- Add to GitHub Repo Secrets:
+  - `CLOUDFLARE_API_TOKEN`: Your API token
+  - `CLOUDFLARE_ACCOUNT_ID`: Your Account ID
+  - `CLOUDFLARE_ZONE_ID`: Your Zone ID (if using a custom domain)
+  - `CSRF_TOKEN`: Your SAPS CSRF token (if applicable)
+
+**3. Environment Variables**
+- Update `proxy/wrangler.toml` with your Cloudflare settings
+- Set production secrets in Cloudflare Dashboard or via `wrangler secret put`
+- Frontend will automatically use the deployed worker URL
+
+**4. (Optional) Custom Domain**
+- Add Cloudflare CNAME or configure custom domain in Cloudflare dashboard
+- Workers will be accessible at your domain
 
 ---
 
@@ -178,22 +189,27 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed steps.
 
 Create `frontend/.env.production`:
 ```env
-VITE_API_BASE_URL=https://your-proxy-url.com
+VITE_API_BASE_URL=https://your-worker.your-domain.com
 VITE_BASE_PATH=/
 ```
 
-### Proxy Environment Variables
-
-Create `proxy/.env.production`:
+Create `frontend/.env.development`:
 ```env
-NODE_ENV=production
-PORT=3000
-ALLOWED_ORIGIN=https://your-frontend-domain.com
+VITE_API_BASE_URL=http://localhost:8787
+VITE_BASE_PATH=/
+```
+
+### Cloudflare Workers Environment Variables
+
+Set in `proxy/wrangler.toml` or via `wrangler secret put`:
+```env
+ENVIRONMENT=production
+ALLOWED_ORIGIN=https://yourusername.github.io/SAPS-Firearm-Status-Enquiry-PWA
 UPSTREAM_URL=https://www.saps.gov.za/services/firearm_status_enquiry.php
-CSRF_TOKEN=                                    # Leave empty to use default
-RATE_LIMIT_REQUESTS=30
+CSRF_TOKEN=                                    # Optional, leave empty for default
+RATE_LIMIT_REQUESTS=10
 RATE_LIMIT_WINDOW_MS=60000
-UPSTREAM_TIMEOUT_MS=15000
+UPSTREAM_TIMEOUT_MS=30000
 ```
 
 ---
@@ -212,7 +228,7 @@ GET /health
 
 ### Firearm Status Query
 ```http
-POST /api/proxy/firearm-status
+POST /api/firearm-status
 Content-Type: application/json
 
 {
@@ -239,9 +255,9 @@ Content-Type: application/json
 ```
 
 ### Rate Limiting
-- **Limit**: 30 requests per minute per client IP
+- **Limit**: 10 requests per minute per client IP
 - **Response**: 429 Too Many Requests
-- **Window**: Sliding 60-second window
+- **Window**: 60-second rolling window
 
 ---
 
@@ -255,9 +271,7 @@ This app includes comprehensive SEO optimization:
 ✅ **Sitemap**: `sitemap.xml` for search engine indexing  
 ✅ **Robots.txt**: Crawling directives  
 ✅ **PWA Manifest**: Icons, categories, screenshots  
-✅ **Mobile Meta Tags**: Apple touch icon, install prompts  
-
-See [SEO.md](./SEO.md) for optimization checklist and before-deployment updates.
+✅ **Mobile Meta Tags**: Apple touch icon, install prompts
 
 ---
 
@@ -289,16 +303,31 @@ rm -rf frontend/node_modules frontend/package-lock.json
 cd frontend && npm install && npm run dev
 ```
 
-### Proxy won't start
+### Proxy/Workers won't start
 ```bash
-rm -rf proxy/node_modules proxy/package-lock.json
-cd proxy && npm install && npm run dev
+# Ensure TypeScript compilation
+cd proxy
+npm install
+npm run build    # Compiles TS to JS
+npm run dev      # Starts Wrangler dev server
 ```
+
+### Worker deployment fails
+- Check Cloudflare API Token is valid: `wrangler login` or set `CLOUDFLARE_API_TOKEN`
+- Verify `wrangler.toml` has correct `name` and `main` path
+- Check GitHub Secrets include `CLOUDFLARE_API_TOKEN`
+
+### CORS errors when calling API
+- Verify `ALLOWED_ORIGIN` in `wrangler.toml` matches frontend URL
+- For local dev: should be `http://localhost:5173`
+- For production: should be `https://yourusername.github.io/SAPS-Firearm-Status-Enquiry-PWA/`
 
 ### API returns "SAPS servers offline"
 - SAPS servers may be temporarily down
-- Rate limit reached (30 req/min per IP)
-- Network timeout (15 seconds)
+- Rate limit reached (10 req/min per IP)
+- Network timeout (30 seconds)
+- Worker may be unreachable or misconfigured
+- **Debug**: Check Cloudflare Worker logs via `wrangler tail`
 - **Solution**: Retry in a moment or check [saps.gov.za](https://www.saps.gov.za) manually
 
 ### Service worker not caching
@@ -308,9 +337,9 @@ cd proxy && npm install && npm run dev
 - Check scope in `vite.config.ts` matches deployment base path
 
 ### CORS errors in console (dev only)
-- Verify `VITE_API_BASE_URL` in frontend `.env.development`
-- Ensure proxy is running on port 3000
-- Check proxy has `ALLOWED_ORIGIN=http://localhost:5173` (dev)
+- Verify `VITE_API_BASE_URL` in frontend `.env.development` is `http://localhost:8787`
+- Ensure Cloudflare Workers dev server is running (`npm run dev` in proxy folder)
+- Check worker logs: `wrangler tail`
 
 ### PWA not installing
 - Ensure HTTPS on production

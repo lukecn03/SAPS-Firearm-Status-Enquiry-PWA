@@ -63,19 +63,12 @@ function App() {
     setLastQuery({ fsref: '', fserial: '' });
   };
 
-  useEffect(() => {
-    // Register service worker for PWA
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch((err) => {
-        logger.warn('Service worker registration failed', err);
-      });
-    }
-  }, []);
+
 
   return (
     <div className={styles.app}>
       <header className={styles.header}>
-        <h1 className={styles.title}>🔍 SAPS Firearm Status Enquiry</h1>
+        <h1 className={styles.title}>SAPS Firearm Status Enquiry</h1>
         <p className={styles.subtitle}>Check your firearm application status quickly and easily</p>
       </header>
 

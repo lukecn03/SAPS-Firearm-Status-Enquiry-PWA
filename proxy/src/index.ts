@@ -1,231 +1,153 @@
-import express, { Request, Response, NextFunction } from 'express';
-import cors from 'cors';
 import { logger } from './logger';
 
-interface FirearmStatusRequest {
-  fsref: string;
-  fserial?: string;
-}
+const RATE_LIMIT_WINDOW = 60_000;
+const RATE_LIMIT_MAX = 10;
+const ipRateMap = new Map<string, { count: number; firstSeen: number }>();
 
-interface ProxyResponse {
-  html: string;
-  fetchedAt: string;
-  query: {
-    fsref: string;
-    fserial?: string;
-  };
-}
+const commonHeaders = {
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Cache-Control': 'max-age=0',
+  'Connection': 'keep-alive',
+  'Origin': 'https://www.saps.gov.za',
+  'Referer': 'https://www.saps.gov.za/services/firearm_status_enquiry.php',
+  'Sec-Fetch-Dest': 'document',
+  'Sec-Fetch-Mode': 'navigate',
+  'Sec-Fetch-Site': 'same-origin',
+  'Upgrade-Insecure-Requests': '1',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+};
 
-interface RateLimitStore {
-  count: number;
-  resetTime: number;
-}
-
-const RATE_LIMIT_REQUESTS = Number(process.env.RATE_LIMIT_REQUESTS) || 30;
-const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS) || 60 * 1000; // 1 minute
-const UPSTREAM_TIMEOUT = Number(process.env.UPSTREAM_TIMEOUT_MS) || 15 * 1000; // 15 seconds
-const UPSTREAM_URL = process.env.UPSTREAM_URL || 'https://www.saps.gov.za/services/firearm_status_enquiry.php';
-const PORT = process.env.PORT || 3000;
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
-
-const app = express();
-
-// Middleware
-app.use(cors({ origin: ALLOWED_ORIGIN }));
-app.use(express.json());
-
-// Simple in-memory rate limiting
-const rateLimitMap = new Map<string, RateLimitStore>();
-
-function validateInput(fsref: string, fserial?: string): string | null {
-  if (!fsref || typeof fsref !== 'string') {
-    logger.warn('Input validation failed: Reference Number is required');
-    return 'Reference Number (fsref) is required';
-  }
-
-  if (fsref.trim().length === 0) {
-    logger.warn('Input validation failed: Reference Number is empty');
-    return 'Reference Number cannot be empty';
-  }
-
-  if (fsref.length > 40) {
-    logger.warn('Input validation failed: Reference Number exceeds length', { length: fsref.length });
-    return 'Reference Number exceeds maximum length of 40';
-  }
-
-  if (fserial && fserial.length > 40) {
-    logger.warn('Input validation failed: Serial Number exceeds length', { length: fserial.length });
-    return 'Serial Number exceeds maximum length of 40';
-  }
-
-  logger.debug('Input validation passed', { fsref, fserial: fserial || '' });
-  return null;
-}
-
-function getClientIP(req: Request): string {
-  const forwarded = req.get('x-forwarded-for');
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-  return req.ip || 'unknown';
-}
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const current = rateLimitMap.get(ip);
-
-  if (!current || now > current.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
-    return true;
-  }
-
-  if (current.count >= RATE_LIMIT_REQUESTS) {
-    return false;
-  }
-
-  current.count++;
-  return true;
-}
-
-async function proxyToSAPS(fsref: string, fserial?: string): Promise<string> {
-  logger.debug('Proxying request to SAPS', { fsref, fserial: fserial || '' });
-  
-  const formData = new URLSearchParams();
-  // Read CSRF token from environment if provided
-  const CSRF_TOKEN = process.env.CSRF_TOKEN || '5117511d3ced47633a16308deb237771f3fceeacf93d7c88dbf67c290fb34b6a';
-  formData.append('csrf_token', CSRF_TOKEN);
-  formData.append('fsref', fsref.trim());
-  // Send empty serial as empty string when missing
-  formData.append('fserial', fserial ? fserial.trim() : '');
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT);
-
-  try {
-    const response = await fetch(UPSTREAM_URL, {
-      method: 'POST',
-      headers: {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'Accept-Language': 'en-US,en;q=0.9,hr;q=0.8',
-        'Cache-Control': 'max-age=0',
-        'Connection': 'keep-alive',
-        'Content-Type': 'application/x-www-form-urlencoded',
-        // send cookie header with csrf_token and analytics cookie
-        'Cookie': '_ga=GA1.1.166994781.1770100878; csrf_token=' + CSRF_TOKEN + '; _ga_Z8DRHW5WJT=GS2.1.s1770100878$o1$g1$t1770103242$j60$l0$h0',
-        'Origin': 'https://www.saps.gov.za',
-        'Referer': 'https://www.saps.gov.za/services/firearm_status_enquiry.php',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'same-origin',
-        'Sec-Fetch-User': '?1',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1'
-      },
-      body: formData.toString(),
-      signal: controller.signal as any
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      logger.error('Upstream returned error status', { status: response.status });
-      throw new Error(`Upstream returned ${response.status}`);
+export default {
+  async fetch(request: Request, env: any): Promise<Response> {
+    const CSRF_TOKEN = env.CSRF_TOKEN || '';
+    const SAPS_URL = env.SAPS_URL || 'https://www.saps.gov.za/services/firearm_status_enquiry.php';
+    
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Max-Age': '86400'
+        }
+      });
     }
 
-    const html = await response.text();
-    logger.debug('Successfully proxied to SAPS', { htmlLength: html.length });
-    return html;
-  } catch (error) {
-    clearTimeout(timeoutId);
+    const url = new URL(request.url);
 
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        logger.error('Proxy request timeout');
-        throw new Error('Request timeout');
+    if (url.pathname === '/api/firearm-status' && request.method === 'POST') {
+      const clientIp = (request.headers.get('cf-connecting-ip') || 'unknown').split(',')[0].trim();
+      logger.info('Request received', { clientIp });
+
+      const now = Date.now();
+      const entry = ipRateMap.get(clientIp);
+      if (!entry || now - entry.firstSeen > RATE_LIMIT_WINDOW) {
+        ipRateMap.set(clientIp, { count: 1, firstSeen: now });
+      } else {
+        entry.count += 1;
+        if (entry.count > RATE_LIMIT_MAX) {
+          return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
+            status: 429,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+          });
+        }
+        ipRateMap.set(clientIp, entry);
       }
-      logger.error('Proxy request error', error);
-      throw error;
+
+      try {
+        const contentType = request.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          return new Response(JSON.stringify({ error: 'Expected JSON' }), { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+        }
+
+        const body = await request.json() as { fsref?: unknown; fserial?: unknown };
+        const fsref = typeof body.fsref === 'string' ? body.fsref.trim() : '';
+        const fserial = typeof body.fserial === 'string' ? body.fserial.trim() : '';
+
+        if (!fsref || fsref.length > 40 || fserial.length > 40) {
+          return new Response(JSON.stringify({ error: 'Invalid input' }), { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+        }
+
+        const maskedFsref = `${fsref.slice(0, 4)}...`;
+        logger.info('Proxying', { maskedFsref, hasFserial: !!fserial });
+
+        const formBody = new URLSearchParams();
+        formBody.append('csrf_token', CSRF_TOKEN);
+        formBody.append('fsref', fsref);
+        formBody.append('fserial', fserial || '');
+
+        const controller = new AbortController();
+        // SAPS endpoint can be slow; allow up to 30 seconds for a response
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        const outboundHeaders = {
+          'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+          'accept-language': 'en-US,en;q=0.9,hr;q=0.8',
+          'cache-control': 'max-age=0',
+          'content-type': 'application/x-www-form-urlencoded',
+          'sec-ch-ua': '"Google Chrome";v="141", "Not?A_Brand";v="8", "Chromium";v="141"',
+          'sec-ch-ua-mobile': '?0',
+          'sec-ch-ua-platform': '"Windows"',
+          'sec-fetch-dest': 'document',
+          'sec-fetch-mode': 'navigate',
+          'sec-fetch-site': 'same-origin',
+          'sec-fetch-user': '?1',
+          'upgrade-insecure-requests': '1',
+          'cookie': `csrf_token=${CSRF_TOKEN}; _ga=GA1.1.000000000.0000000000`,
+          'Referer': 'https://www.saps.gov.za/services/firearm_status_enquiry.php'
+        };
+
+        logger.info('Outbound fetch prepared', { url: SAPS_URL, headerKeys: Object.keys(outboundHeaders), bodyPreview: formBody.toString().slice(0, 200) });
+
+        let response: Response;
+        try {
+          try {
+            response = await fetch(SAPS_URL, {
+              method: 'POST',
+              headers: outboundHeaders,
+              body: formBody.toString(),
+              signal: controller.signal,
+              cf: { cacheEverything: false, cacheTtl: 0 }
+            });
+          } catch (fetchErr) {
+            const fmsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+            logger.error('Fetch to upstream failed', { message: fmsg, name: (fetchErr as any)?.name, stack: (fetchErr as any)?.stack, url: SAPS_URL });
+            console.error('Fetch error details:', fetchErr);
+            // Re-throw so outer catch handles the response
+            throw fetchErr;
+          }
+        } finally {
+          clearTimeout(timeoutId);
+        }
+
+        if (!response.ok) {
+          logger.warn('SAPS returned error', { status: response.status });
+          return new Response(JSON.stringify({ error: 'Upstream error' }), { status: 502, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+        }
+
+        const html = await response.text();
+        logger.info('Success');
+
+        return new Response(JSON.stringify({ html, fetchedAt: new Date().toISOString() }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        const stack = (error as any)?.stack;
+        logger.error('Error', { message: msg, stack });
+        console.error('Worker caught error:', error);
+        // Include details in response for local debugging
+        return new Response(JSON.stringify({ error: 'Server error', details: msg, stack }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
+      }
     }
 
-    logger.error('Unknown error during proxy request');
-    throw new Error('Unknown error fetching from SAPS');
+    return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
   }
-}
-
-// Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
-  logger.debug('Health check request received');
-  res.json({ status: 'ok' });
-});
-
-// Firearm status proxy endpoint
-app.post('/api/proxy/firearm-status', async (req: Request, res: Response) => {
-  const body: FirearmStatusRequest = req.body;
-  const clientIP = getClientIP(req);
-  
-  logger.debug('Firearm status request received', { clientIP, fsref: body.fsref, fserial: body.fserial || '' });
-
-  // Validate input
-  const validationError = validateInput(body.fsref, body.fserial);
-  if (validationError) {
-    logger.warn('Firearm status request rejected: validation error', { clientIP, error: validationError });
-    return res.status(400).json({ error: validationError });
-  }
-
-  // Rate limiting
-  if (!checkRateLimit(clientIP)) {
-    logger.warn('Rate limit exceeded', { clientIP });
-    return res.status(429).json({ error: 'Rate limit exceeded' });
-  }
-
-  // Proxy to SAPS
-  try {
-    const html = await proxyToSAPS(body.fsref, body.fserial);
-
-    const response: ProxyResponse = {
-      html,
-      fetchedAt: new Date().toISOString(),
-      query: {
-        fsref: body.fsref,
-        fserial: body.fserial
-      }
-    };
-
-    logger.info('Firearm status request successful', { clientIP, fsref: body.fsref });
-    res.set('Cache-Control', 'private, max-age=300');
-    res.json(response);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('Firearm status request failed', { clientIP, error: message });
-
-    // Do not reveal upstream error details to clients; log for debugging only
-    res.status(503).json({
-      error: 'Failed to query SAPS service'
-    });
-  }
-});
-
-// 404 handler
-app.use((req: Request, res: Response) => {
-  logger.warn('404 Not Found', { method: req.method, path: req.path });
-  res.status(404).json({ error: 'Not found' });
-});
-
-// Error handler
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  logger.error('Unhandled error', err);
-  res.status(500).json({
-    error: 'Internal server error',
-    details: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
-// Start server
-app.listen(PORT, () => {
-  logger.info(`Server running on http://localhost:${PORT}`);
-  logger.info(`Health check: http://localhost:${PORT}/health`);
-  logger.info(`Proxy endpoint: POST http://localhost:${PORT}/api/proxy/firearm-status`);
-});
-
-export default app;
+};
 

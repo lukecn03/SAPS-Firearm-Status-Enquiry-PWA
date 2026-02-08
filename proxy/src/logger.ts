@@ -1,29 +1,60 @@
 /**
- * Simple logging utility for backend debugging
- * Logs only in development environment
+ * Simple logger for Cloudflare Workers
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+interface LogEntry {
+  timestamp: string;
+  level: LogLevel;
+  message: string;
+  data?: Record<string, unknown>;
+}
+
+function formatLog(entry: LogEntry): string {
+  const { timestamp, level, message, data } = entry;
+  const dataStr = data ? ` ${JSON.stringify(data)}` : '';
+  return `[${timestamp}] ${level.toUpperCase()}: ${message}${dataStr}`;
+}
 
 export const logger = {
-  debug: (message: string, data?: any) => {
-    if (isDev) {
-      console.log(`[DEBUG] ${new Date().toISOString()} ${message}`, data ? data : '');
-    }
+  debug(message: string, data?: Record<string, unknown>) {
+    const entry: LogEntry = {
+      timestamp: new Date().toISOString(),
+      level: 'debug',
+      message,
+      data
+    };
+    console.log(formatLog(entry));
   },
-  info: (message: string, data?: any) => {
-    if (isDev) {
-      console.log(`[INFO] ${new Date().toISOString()} ${message}`, data ? data : '');
-    }
+
+  info(message: string, data?: Record<string, unknown>) {
+    const entry: LogEntry = {
+      timestamp: new Date().toISOString(),
+      level: 'info',
+      message,
+      data
+    };
+    console.log(formatLog(entry));
   },
-  warn: (message: string, data?: any) => {
-    if (isDev) {
-      console.warn(`[WARN] ${new Date().toISOString()} ${message}`, data ? data : '');
-    }
+
+  warn(message: string, data?: Record<string, unknown>) {
+    const entry: LogEntry = {
+      timestamp: new Date().toISOString(),
+      level: 'warn',
+      message,
+      data
+    };
+    console.warn(formatLog(entry));
   },
-  error: (message: string, error?: any) => {
-    if (isDev) {
-      console.error(`[ERROR] ${new Date().toISOString()} ${message}`, error ? error : '');
-    }
+
+  error(message: string, data?: Record<string, unknown>) {
+    const entry: LogEntry = {
+      timestamp: new Date().toISOString(),
+      level: 'error',
+      message,
+      data
+    };
+    console.error(formatLog(entry));
   }
 };
