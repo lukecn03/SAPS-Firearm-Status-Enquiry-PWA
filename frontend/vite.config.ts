@@ -19,7 +19,7 @@ export default defineConfig({
         name: 'SAPS Firearm Status Enquiry',
         short_name: 'SAPS Firearm Status',
         description: 'Check your firearm application status with SAPS',
-        theme_color: '#1e3a8a',
+        theme_color: '#1B3838',
         background_color: '#ffffff',
         display: 'standalone',
         scope: base,
@@ -27,22 +27,16 @@ export default defineConfig({
         orientation: 'portrait-primary',
         icons: [
           {
-            src: '/icon-192.svg',
+            src: '/icon.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
-            purpose: 'any'
+            type: 'image/png',
+            purpose: 'any maskable'
           },
           {
-            src: '/icon-512.svg',
+            src: '/icon.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'any'
-          },
-          {
-            src: '/icon-192-maskable.svg',
-            sizes: '192x192',
-            type: 'image/svg+xml',
-            purpose: 'maskable'
+            type: 'image/png',
+            purpose: 'any maskable'
           }
         ]
       },

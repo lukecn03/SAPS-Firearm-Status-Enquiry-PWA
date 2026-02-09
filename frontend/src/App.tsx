@@ -5,7 +5,7 @@ import { InstructionsBanner } from './components/InstructionsBanner';
 import { SearchForm } from './components/SearchForm';
 import { ResultsTable } from './components/ResultsTable';
 import { queryFirearmStatus } from './lib/api';
-import { getFromCache, saveToCache, clearCacheEntry, FirearmRecord } from './lib/cache';
+import { getFromCache, saveToCache, clearCacheEntry, getLastQuery, saveLastQuery, FirearmRecord } from './lib/cache';
 import { logger } from './lib/logger';
 
 function App() {
@@ -19,11 +19,23 @@ function App() {
     fserial: ''
   });
 
+  // Load last query from localStorage on app mount
+  useEffect(() => {
+    const saved = getLastQuery();
+    if (saved) {
+      setLastQuery(saved);
+      logger.debug('Restored last query from localStorage');
+    }
+  }, []);
+
   const handleSearch = async (fsref: string, fserial: string) => {
     setIsLoading(true);
     setError(undefined);
     setRecords([]);
     setLastQuery({ fsref, fserial });
+    
+    // Save to localStorage for next time
+    saveLastQuery(fsref, fserial);
 
     try {
       // Check cache first
@@ -69,7 +81,7 @@ function App() {
     <div className={styles.app}>
       <header className={styles.header}>
         <h1 className={styles.title}>SAPS Firearm Status Enquiry</h1>
-        <p className={styles.subtitle}>Check your firearm application status quickly and easily</p>
+        <p className={styles.subtitle}>Check your firearm application or competency application status</p>
       </header>
 
       <main className={styles.main}>

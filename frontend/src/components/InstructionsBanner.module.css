@@ -1,10 +1,10 @@
 .banner {
-  background-color: #dbeafe;
-  border: 1px solid #0284c7;
+  background-color: #fff7e6;
+  border: 1px solid #1B3838;
   border-radius: 0.5rem;
   padding: 1.5rem;
   margin: 1rem 0;
-  color: #075985;
+  color: #1B3838;
 }
 
 .section {
@@ -19,7 +19,7 @@
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #0c4a6e;
+  color: #1B3838;
 }
 
 .instruction {
@@ -28,7 +28,7 @@
 }
 
 .instruction strong {
-  color: #0c4a6e;
+  color: #1B3838;
   font-weight: 600;
 }
 

@@ -1,74 +1,11 @@
 # SAPS Firearm Status Enquiry PWA
 
-> **A fast, mobile-friendly, production-ready Progressive Web App to check your SAPS firearm application status.**
-
-![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)
-![React](https://img.shields.io/badge/React-18-blue)
-![TypeScript](https://img.shields.io/badge/TypeScript-5%2B-blue)
-![PWA](https://img.shields.io/badge/PWA-Ready-brightgreen)
-![License](https://img.shields.io/badge/License-MIT-green)
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Quick Start](#quick-start)
-- [Architecture](#architecture)
-- [Deployment](#deployment)
-- [Configuration](#configuration)
-- [API Reference](#api-reference)
-- [SEO & PWA](#seo--pwa)
-- [Privacy & Security](#privacy--security)
-- [Troubleshooting](#troubleshooting)
-- [Disclaimer](#disclaimer)
-- [License](#license)
-
----
-
-## Overview
-
-This is a **production-ready React PWA** for checking South African firearm application status with SAPS. It includes:
-
-- **Frontend**: Mobile-first React SPA with service worker caching (deployed to GitHub Pages)
-- **Backend**: Cloudflare Workers proxy with rate limiting & validation
-- **PWA Features**: Installable, works offline, 5-minute client-side cache
-- **SEO**: Structured data, Open Graph, sitemap, robots.txt
-- **Privacy**: POPIA-compliant, zero server-side data storage
-- **CI/CD**: GitHub Actions for automated deployment
-
----
-
-## Features
-
-### Frontend (React + TypeScript + Vite)
-- ✅ Mobile-first responsive design
-- ✅ Fast & lightweight
-- ✅ Service worker with offline support
-- ✅ 5-minute client-side caching
-- ✅ Vertical card layout for results
-- ✅ No console logs in production
-- ✅ Accessible (WCAG)
-- ✅ SEO-optimized (structured data, meta tags, sitemap)
-
-### Backend (Cloudflare Workers)
-- ✅ Input validation (fsref, fserial)
-- ✅ Rate limiting (10 req/min per IP)
-- ✅ 30-second upstream timeout
-- ✅ CORS support
-- ✅ Health check endpoint
-- ✅ Error handling (no raw status codes to client)
-- ✅ Environment-based configuration
-- ✅ Serverless deployment on Cloudflare
-
----
+A fast, reliable, mobile-friendly PWA to check your firearm application status with SAPS.
 
 ## Quick Start
 
 ### Prerequisites
 - Node.js 18+
-- Git
 
 ### Local Development
 
@@ -91,61 +28,14 @@ npm install
 npm run dev
 ```
 
-Frontend: `http://localhost:5173`  
-Backend: `http://localhost:8787`
+## Project Structure
 
-### PWA Installation (After Deployment)
-
-- **Android (Chrome/Edge)**: Menu (⋮) → "Add to Home screen" or address bar install icon
-- **iOS (Safari)**: Share → "Add to Home Screen"
-- **Desktop (Chromium)**: Address bar install icon or Menu → "Install app"
-
----
-
-## Architecture
-
-```
-SAPS-Firearm-Status-Enquiry-PWA/
-├── frontend/                    # React + Vite + PWA
-│   ├── src/
-│   │   ├── components/          # React components (SearchForm, ResultsTable, etc.)
-│   │   ├── lib/
-│   │   │   ├── api.ts           # API calls to proxy
-│   │   │   ├── cache.ts         # localStorage caching (5 min)
-│   │   │   ├── logger.ts        # Production-safe logging
-│   │   │   └── parser.ts        # HTML parsing (regex-based)
-│   │   ├── sw.ts                # Service worker (Workbox)
-│   │   └── main.tsx
-│   ├── public/
-│   │   ├── manifest.json        # PWA manifest
-│   │   ├── icon-*.svg           # App icons
-│   │   ├── robots.txt           # SEO: search engine directives
-│   │   └── sitemap.xml          # SEO: page listing
-│   ├── .env.development         # Dev env vars
-│   ├── .env.production          # Prod env vars
-│   ├── vite.config.ts
-│   └── package.json
-├── proxy/                       # Cloudflare Workers backend
-│   ├── src/
-│   │   ├── index.ts             # Main worker handler
-│   │   └── logger.ts            # Server-side logging
-│   ├── wrangler.toml            # Cloudflare Workers config
-│   ├── package.json
-│   └── tsconfig.json
-├── .github/workflows/           # GitHub Actions CI/CD
-│   ├── deploy-frontend-gh-pages.yml
-│   └── deploy-worker-cloudflare.yml
-├── LICENSE                      # MIT License
-└── README.md                    # This file
-```
-
-**Tech Stack**: React 18 • TypeScript • Vite • CSS Modules • Cloudflare Workers • Workbox • GitHub Pages
-
----
+- `frontend/` — React + TypeScript + Vite (service worker, offline cache)
+- `proxy/` — Cloudflare Workers proxy (CORS, rate limiting, validation)
 
 ## Deployment
 
-This project uses **GitHub Actions** for automated CI/CD:
+The app auto-deploys via GitHub Actions:
 
 ### Frontend → GitHub Pages
 - Automatically deployed on every push to main branch
@@ -383,12 +273,5 @@ MIT License. See [LICENSE](./LICENSE) for details.
 
 ---
 
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/icmen/SAPS-Firearm-Status-Enquiry-PWA/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/icmen/SAPS-Firearm-Status-Enquiry-PWA/discussions)
-- **Privacy Policy**: [frontend/public/privacy.html](./frontend/public/privacy.html)
-
----
 
 **Made with ❤️ for South Africa.**

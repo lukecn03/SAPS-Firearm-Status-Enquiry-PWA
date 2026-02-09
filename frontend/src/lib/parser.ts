@@ -15,26 +15,53 @@ export interface FirearmRecord {
  * Looks for the results table with class 'table table-bordered table-hover table-striped'
  * and extracts all rows, mapping them to FirearmRecord objects
  */
-export function parseFirearmStatusHtml(html: string): FirearmRecord[] {
+export function parseFirearmStatusHtml(html: string): { records: FirearmRecord[]; noRecords?: { type: 'REF_ONLY' | 'REF_AND_SERIAL'; reference?: string; serial?: string; message: string } } {
   if (!html || typeof html !== 'string') {
-    return [];
+    return { records: [] };
+  }
+
+  // Detect explicit 'No records' messages which indicate an incorrect input
+  const noRecordsRefAndSerial = /No records to retrieve for your selected Reference Number\s*\(([^)]+)\)\s*and Serial Number\s*\(([^)]+)\)/i;
+  const noRecordsRefOnly = /No records to retrieve for your selected Reference Number\s*\(([^)]+)\)/i;
+
+  const mRefAndSerial = html.match(noRecordsRefAndSerial);
+  if (mRefAndSerial) {
+    return {
+      records: [],
+      noRecords: {
+        type: 'REF_AND_SERIAL',
+        reference: mRefAndSerial[1],
+        serial: mRefAndSerial[2],
+        message: mRefAndSerial[0]
+      }
+    };
+  }
+
+  const mRefOnly = html.match(noRecordsRefOnly);
+  if (mRefOnly) {
+    return {
+      records: [],
+      noRecords: {
+        type: 'REF_ONLY',
+        reference: mRefOnly[1],
+        message: mRefOnly[0]
+      }
+    };
   }
 
   // Look for the table containing results
-  const tableMatch = html.match(
-    /<table[^>]*class='table\s+table-bordered\s+table-hover\s+table-striped'[^>]*>([\s\S]*?)<\/table>/i
-  );
+  const tableMatch = html.match(/<table[^>]*class=['"]?table\s+table-bordered\s+table-hover\s+table-striped['"]?[^>]*>([\s\S]*?)<\/table>/i);
 
   if (!tableMatch) {
-    return [];
+    return { records: [] };
   }
 
   const tableContent = tableMatch[1];
 
   // Extract all rows (skip header row)
   const rowPattern = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-  const rows = [];
-  let rowMatch;
+  const rows: string[] = [];
+  let rowMatch: RegExpExecArray | null;
 
   while ((rowMatch = rowPattern.exec(tableContent)) !== null) {
     rows.push(rowMatch[1]);
@@ -48,8 +75,8 @@ export function parseFirearmStatusHtml(html: string): FirearmRecord[] {
 
     // Extract all cells from the row
     const cellPattern = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;
-    const cells = [];
-    let cellMatch;
+    const cells: string[] = [];
+    let cellMatch: RegExpExecArray | null;
 
     while ((cellMatch = cellPattern.exec(row)) !== null) {
       // Clean up cell content: remove HTML tags, trim whitespace
@@ -64,7 +91,7 @@ export function parseFirearmStatusHtml(html: string): FirearmRecord[] {
       cells.push(cellText);
     }
 
-    // Map cells to FirearmRecord (expects exactly 9 columns)
+    // Map cells to FirearmRecord (expects at least 9 columns)
     if (cells.length >= 9) {
       const record: FirearmRecord = {
         applicationType: cells[0] || '',
@@ -82,5 +109,5 @@ export function parseFirearmStatusHtml(html: string): FirearmRecord[] {
     }
   }
 
-  return records;
+  return { records };
 }

@@ -46,8 +46,8 @@
 
 .input:focus {
   outline: none;
-  border-color: #0284c7;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+  border-color: #1B3838;
+  box-shadow: 0 0 0 3px rgba(27, 56, 56, 0.08);
 }
 
 .input:disabled {
@@ -90,34 +90,35 @@
 }
 
 .buttonPrimary {
-  background-color: #0284c7;
-  color: white;
+  background-color: #FFB302;
+  color: #000000;
   flex: 1;
   min-width: 120px;
 }
 
 .buttonPrimary:hover:not(:disabled) {
-  background-color: #0369a1;
+  background-color: #e6a300;
 }
 
 .buttonPrimary:focus {
-  outline: 2px solid #0284c7;
+  outline: 2px solid #000000;
   outline-offset: 2px;
 }
 
 .buttonSecondary {
-  background-color: #e5e7eb;
-  color: #374151;
+  background-color: #ffffff;
+  color: #1B3838;
+  border: 1px solid rgba(27,56,56,0.08);
   flex: 1;
   min-width: 100px;
 }
 
 .buttonSecondary:hover:not(:disabled) {
-  background-color: #d1d5db;
+  background-color: #f7f7f7;
 }
 
 .buttonSecondary:focus {
-  outline: 2px solid #6b7280;
+  outline: 2px solid #1B3838;
   outline-offset: 2px;
 }
 

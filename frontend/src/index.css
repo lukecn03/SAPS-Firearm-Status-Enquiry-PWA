@@ -13,7 +13,7 @@ body {
     'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f9fafb;
+  background-color: #ffffff;
   color: #1f2937;
 }
 
@@ -38,13 +38,13 @@ p {
 }
 
 a {
-  color: #0284c7;
+  color: #FFB302;
   text-decoration: none;
-  transition: color 0.2s;
+  transition: color 0.15s;
 }
 
 a:hover {
-  color: #0369a1;
+  color: #e6a300;
   text-decoration: underline;
 }
 
@@ -75,7 +75,7 @@ input[type='number'] {
 /* Accessibility */
 
 :focus-visible {
-  outline: 2px solid #0284c7;
+  outline: 2px solid #1B3838;
   outline-offset: 2px;
 }
 

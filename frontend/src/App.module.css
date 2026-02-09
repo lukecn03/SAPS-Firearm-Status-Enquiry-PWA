@@ -2,15 +2,16 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #f9fafb;
+  background-color: #ffffff;
 }
 
 .header {
-  background: linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%);
+  /* background: linear-gradient(135deg, #1B3838 100%, #FFB302 100%); */
+  background-color: #1B3838;
   color: white;
   padding: 3rem 1rem;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .title {
@@ -38,11 +39,11 @@
 }
 
 .footer {
-  background-color: #1f2937;
-  color: #d1d5db;
+  background-color: #1B3838;
+  color: #ffffff;
   padding: 2rem 1rem;
   text-align: center;
-  border-top: 1px solid #374151;
+  border-top: 1px solid rgba(255, 179, 2, 0.08);
 }
 
 .footer p {
@@ -51,32 +52,32 @@
 }
 
 .footer a {
-  color: #93c5fd;
+  color: #FFB302;
   text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s;
+  font-weight: 600;
+  transition: color 0.12s ease;
 }
 
 .footer a:hover {
-  color: #bfdbfe;
+  color: #ffd659;
   text-decoration: underline;
 }
 
 /* Shared footer-style link for privacy and A2HS */
 .footerLink {
-  color: #93c5fd;
+  color: #FFB302;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
   margin: 0 6px;
 }
 
 .footerLink:hover {
-  color: #bfdbfe;
+  color: #ffd659;
   text-decoration: underline;
 }
 
 .version {
-  color: #6b7280;
+  color: #bfbfbf;
   font-size: 0.8rem;
 }
 

@@ -9,14 +9,18 @@ interface ResultsTableProps {
 
 export const ResultsTable: React.FC<ResultsTableProps> = ({ records, error }) => {
   if (error) {
+    // If upstream returned a 'no records' message, don't show the 'SAPS servers offline' hint
+    const isNoRecords = /no records|no results found|no records to retrieve/i.test(error);
     return (
       <div className={styles.container}>
         <h3 className={styles.title}>Search Results:</h3>
         <div className={styles.error}>
           <p className={styles.errorText}>{error}</p>
-          <p className={styles.errorHint}>
-            This usually indicates the SAPS servers are offline or not responding.
-          </p>
+          {!isNoRecords && (
+            <p className={styles.errorHint}>
+              This usually indicates the SAPS servers are offline or not responding.
+            </p>
+          )}
         </div>
       </div>
     );

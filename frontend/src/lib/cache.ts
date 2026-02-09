@@ -93,7 +93,41 @@ export function clearCacheEntry(fsref: string, fserial?: string): void {
   }
 }
 
+const LAST_QUERY_KEY = 'firearm_last_query';
+
+export interface LastQuery {
+  fsref: string;
+  fserial: string;
+}
+
+export function getLastQuery(): LastQuery | null {
+  try {
+    const stored = localStorage.getItem(LAST_QUERY_KEY);
+    if (!stored) {
+      logger.debug('No last query found');
+      return null;
+    }
+    const query: LastQuery = JSON.parse(stored);
+    logger.debug('Loaded last query', { fsref: query.fsref.slice(0, 4) + '...' });
+    return query;
+  } catch (error) {
+    logger.error('Error loading last query', error);
+    return null;
+  }
+}
+
+export function saveLastQuery(fsref: string, fserial: string): void {
+  try {
+    const query: LastQuery = { fsref, fserial };
+    logger.debug('Saving last query', { fsref: fsref.slice(0, 4) + '...' });
+    localStorage.setItem(LAST_QUERY_KEY, JSON.stringify(query));
+  } catch (error) {
+    logger.error('Error saving last query', error);
+  }
+}
+
 export function clearAllCache(): void {
+
   try {
     localStorage.removeItem(CACHE_KEY);
   } catch (error) {

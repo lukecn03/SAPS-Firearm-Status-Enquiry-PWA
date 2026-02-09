@@ -93,10 +93,30 @@ export async function queryFirearmStatus(
 
     // Parse the HTML response
     try {
-      const records = parseFirearmStatusHtml(data.html);
-      logger.debug('HTML parsed successfully', { recordCount: records.length });
+      const parsed = parseFirearmStatusHtml(data.html);
+      const records = parsed.records;
+      logger.debug('HTML parsed successfully', { recordCount: records.length, noRecords: !!parsed.noRecords });
 
-      // Check if parsing returned no results
+      if (parsed.noRecords) {
+        logger.warn('Upstream reported no records for provided inputs', { info: parsed.noRecords });
+        if (parsed.noRecords.type === 'REF_ONLY') {
+          return {
+            records: [],
+            fetchedAt: data.fetchedAt,
+            error: { message: `No records found for Reference Number ${parsed.noRecords.reference}`, code: 'INVALID_REFERENCE' }
+          };
+        }
+
+        if (parsed.noRecords.type === 'REF_AND_SERIAL') {
+          return {
+            records: [],
+            fetchedAt: data.fetchedAt,
+            error: { message: `No records found for Reference Number ${parsed.noRecords.reference} and Serial Number ${parsed.noRecords.serial}`, code: 'INVALID_REFERENCE_AND_SERIAL' }
+          };
+        }
+      }
+
+      // Check if parsing returned no results (table parsing produced nothing)
       if (records.length === 0) {
         logger.warn('No results found for query', { fsref, fserial });
         return {

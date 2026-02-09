@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './SearchForm.module.css';
 
 interface SearchFormProps {
@@ -18,6 +18,12 @@ export const SearchForm: React.FC<SearchFormProps> = ({
 }) => {
   const [fsref, setFsref] = useState(initialFsref);
   const [fserial, setFserial] = useState(initialFserial);
+
+  // Update form fields when initial values change (e.g., from localStorage)
+  useEffect(() => {
+    setFsref(initialFsref);
+    setFserial(initialFserial);
+  }, [initialFsref, initialFserial]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +50,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({
           id="fsref"
           type="text"
           className={styles.input}
-          placeholder="Enter reference number"
+          placeholder="e.g., 18555212"
           value={fsref}
           onChange={(e) => setFsref(e.target.value)}
           maxLength={40}
@@ -64,7 +70,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({
           id="fserial"
           type="text"
           className={styles.input}
-          placeholder="Enter serial number (optional)"
+          placeholder="e.g., J4865 (optional)"
           value={fserial}
           onChange={(e) => setFserial(e.target.value)}
           maxLength={40}
