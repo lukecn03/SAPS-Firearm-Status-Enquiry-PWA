@@ -19,9 +19,10 @@ export const InstructionsBanner: React.FC = () => {
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>Tips</h3>
         <p className={styles.instruction}>
-          On failure, double-check your input and try again. If you continue to have issues, request again, sometimes SAPS servers need some waking up hehe
+          On failure, double-check your input and try again. If you continue to have issues, request again, sometimes SAPS servers need some waking up hehe. Do note, if continual failure, try again next day, SAPS might be down
         </p>
       </div>
+      
     </div>
   );
 };
