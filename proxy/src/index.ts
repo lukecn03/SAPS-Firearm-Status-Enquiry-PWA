@@ -1,8 +1,23 @@
 import { logger } from './logger';
 
-const RATE_LIMIT_WINDOW = 60_000;
-const RATE_LIMIT_MAX = 10;
+// Rate limiting constants
+const RATE_LIMIT_WINDOW = 60_000; // 60 seconds (existing rate limit window)
+const RATE_LIMIT_MAX = 10; // Existing per-IP limit: 10 req/60s
+const DAILY_LIMIT_THRESHOLD = 98_000; // Start returning 429 at this count
+
+// Rate limit tracking maps
 const ipRateMap = new Map<string, { count: number; firstSeen: number }>();
+let dailyRequestCount = 0;
+let currentDayUtc = getUtcDateString();
+
+// Helper function to get current UTC date as YYYY-MM-DD
+function getUtcDateString(): string {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(now.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 const commonHeaders = {
   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
@@ -41,6 +56,24 @@ export default {
       const clientIp = (request.headers.get('cf-connecting-ip') || 'unknown').split(',')[0].trim();
       logger.info('Request received', { clientIp });
 
+      // Reset daily counter if date changed
+      const todayUtc = getUtcDateString();
+      if (todayUtc !== currentDayUtc) {
+        logger.info('Daily counter reset', { previousDay: currentDayUtc, newDay: todayUtc, count: dailyRequestCount });
+        currentDayUtc = todayUtc;
+        dailyRequestCount = 0;
+      }
+
+      // Check global daily limit - block ALL requests from ANY IP when reached
+      if (dailyRequestCount >= DAILY_LIMIT_THRESHOLD) {
+        logger.warn('Daily limit threshold reached', { count: dailyRequestCount });
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
+      }
+
+      // Check existing per-IP per-minute rate limit (10 req/60s)
       const now = Date.now();
       const entry = ipRateMap.get(clientIp);
       if (!entry || now - entry.firstSeen > RATE_LIMIT_WINDOW) {
@@ -48,12 +81,19 @@ export default {
       } else {
         entry.count += 1;
         if (entry.count > RATE_LIMIT_MAX) {
+          logger.warn('Rate limit exceeded', { clientIp, count: entry.count, limit: RATE_LIMIT_MAX });
           return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
             status: 429,
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
           });
         }
         ipRateMap.set(clientIp, entry);
+      }
+
+      // Increment daily counter
+      dailyRequestCount += 1;
+      if (dailyRequestCount % 10_000 === 0) {
+        logger.info('Daily request count milestone', { count: dailyRequestCount, threshold: DAILY_LIMIT_THRESHOLD, percentUsed: Math.round((dailyRequestCount / DAILY_LIMIT_THRESHOLD) * 100) });
       }
 
       try {
