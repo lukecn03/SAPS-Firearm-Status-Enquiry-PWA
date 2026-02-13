@@ -1,5 +1,7 @@
 # SAPS Firearm Status Enquiry PWA
 
+![PWA Icon](./frontend/public/icon.png)
+
 A fast, reliable, mobile-friendly PWA to check your firearm application status with SAPS.
 
 ## Quick Start
