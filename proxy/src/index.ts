@@ -1,4 +1,5 @@
 import { logger } from './logger';
+import { buildCookieHeader, extractCsrfToken } from './saps-session';
 
 // Rate limiting constants
 const RATE_LIMIT_WINDOW = 60_000; // 60 seconds (existing rate limit window)
@@ -20,8 +21,8 @@ function getUtcDateString(): string {
 }
 
 const commonHeaders = {
-  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-  'Accept-Language': 'en-US,en;q=0.9',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+  'Accept-Language': 'en-US,en;q=0.9,hr;q=0.8',
   'Cache-Control': 'max-age=0',
   'Connection': 'keep-alive',
   'Origin': 'https://www.saps.gov.za',
@@ -30,8 +31,35 @@ const commonHeaders = {
   'Sec-Fetch-Mode': 'navigate',
   'Sec-Fetch-Site': 'same-origin',
   'Upgrade-Insecure-Requests': '1',
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36'
 };
+
+async function getSapsSession(SAPS_URL: string, fallbackToken: string): Promise<{ csrfToken: string; cookieHeader: string }> {
+  const sessionHeaders = {
+    ...commonHeaders,
+    'accept-language': 'en-US,en;q=0.9,hr;q=0.8',
+    'sec-ch-ua': '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+    'sec-fetch-dest': 'document',
+    'sec-fetch-mode': 'navigate',
+    'sec-fetch-site': 'same-origin',
+    'sec-fetch-user': '?1'
+  };
+
+  const response = await fetch(SAPS_URL, {
+    method: 'GET',
+    headers: sessionHeaders,
+    redirect: 'manual'
+  });
+
+  const html = await response.text();
+  const csrfToken = extractCsrfToken(html) || fallbackToken;
+  const setCookieHeader = response.headers.get('set-cookie');
+  const cookieHeader = buildCookieHeader(setCookieHeader, fallbackToken ? `csrf_token=${fallbackToken}` : '');
+
+  return { csrfToken, cookieHeader };
+}
 
 export default {
   async fetch(request: Request, env: any): Promise<Response> {
@@ -113,8 +141,10 @@ export default {
         const maskedFsref = `${fsref.slice(0, 4)}...`;
         logger.info('Proxying', { maskedFsref, hasFserial: !!fserial });
 
+        const { csrfToken, cookieHeader } = await getSapsSession(SAPS_URL, CSRF_TOKEN);
+
         const formBody = new URLSearchParams();
-        formBody.append('csrf_token', CSRF_TOKEN);
+        formBody.append('csrf_token', csrfToken);
         formBody.append('fsref', fsref);
         formBody.append('fserial', fserial || '');
 
@@ -123,23 +153,21 @@ export default {
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 
         const outboundHeaders = {
-          'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+          ...commonHeaders,
           'accept-language': 'en-US,en;q=0.9,hr;q=0.8',
-          'cache-control': 'max-age=0',
           'content-type': 'application/x-www-form-urlencoded',
-          'sec-ch-ua': '"Google Chrome";v="141", "Not?A_Brand";v="8", "Chromium";v="141"',
+          'sec-ch-ua': '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
           'sec-ch-ua-mobile': '?0',
           'sec-ch-ua-platform': '"Windows"',
           'sec-fetch-dest': 'document',
           'sec-fetch-mode': 'navigate',
           'sec-fetch-site': 'same-origin',
           'sec-fetch-user': '?1',
-          'upgrade-insecure-requests': '1',
-          'cookie': `csrf_token=${CSRF_TOKEN}; _ga=GA1.1.000000000.0000000000`,
+          'cookie': cookieHeader,
           'Referer': 'https://www.saps.gov.za/services/firearm_status_enquiry.php'
         };
 
-        logger.info('Outbound fetch prepared', { url: SAPS_URL, headerKeys: Object.keys(outboundHeaders), bodyPreview: formBody.toString().slice(0, 200) });
+        logger.info('Outbound fetch prepared', { url: SAPS_URL, headerKeys: Object.keys(outboundHeaders), bodyPreview: formBody.toString().slice(0, 200), csrfTokenSource: csrfToken === CSRF_TOKEN ? 'fallback' : 'session' });
 
         let response: Response;
         try {
