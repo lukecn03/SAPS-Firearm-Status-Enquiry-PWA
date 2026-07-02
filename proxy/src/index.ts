@@ -54,6 +54,21 @@ async function getSapsSession(SAPS_URL: string, fallbackToken: string): Promise<
   });
 
   const html = await response.text();
+
+  // Log the GET response status, headers and a small HTML preview for debugging
+  try {
+    const headersObj: Record<string, string> = {};
+    response.headers.forEach((value, key) => { headersObj[key] = value; });
+    logger.info('SAPS GET response', {
+      status: response.status,
+      headers: headersObj,
+      bodyPreview: html.slice(0, 2000)
+    });
+  } catch (logErr) {
+    // Ensure logging failures don't break the flow
+    logger.warn('Failed to log SAPS GET response', { message: (logErr as any)?.message || String(logErr) });
+  }
+
   const csrfToken = extractCsrfToken(html) || fallbackToken;
   const setCookieHeader = response.headers.get('set-cookie');
   const cookieHeader = buildCookieHeader(setCookieHeader, fallbackToken ? `csrf_token=${fallbackToken}` : '');
