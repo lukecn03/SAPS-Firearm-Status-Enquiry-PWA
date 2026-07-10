@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: cloudflare-worker-deploy
-  cancel-in-progress: truer
+  cancel-in-progress: true
 
 jobs:
   deploy-worker:
