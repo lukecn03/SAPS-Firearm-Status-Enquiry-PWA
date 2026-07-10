@@ -1,4 +1,4 @@
-name = "saps-firearm-proxy-production"
+name = "saps-firearm-proxy"
 main = "src/index.ts"
 
 compatibility_date = "2024-12-02"
@@ -19,8 +19,6 @@ crons = ["0 */6 * * *"]
 # binding = "SAPS_KV"
 # id = "abc123def456..."
 
-[env.production]
-vars = { ENVIRONMENT = "production" }
 
 # Secrets must be set via `wrangler secret put` or the Cloudflare dashboard.
 # Do NOT add secrets to this file. Set `CSRF_TOKEN` and `SAPS_URL` in GitHub
